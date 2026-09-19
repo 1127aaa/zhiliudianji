@@ -93,7 +93,17 @@ int main(void)
   MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
   Motor_Init();
-  OLED_Init();
+  if (OLED_Init() == 0)
+  {
+    /* OLED 无应答：电机短转 3 次作为故障指示 */
+    for (uint8_t i = 0; i < 3; i++)
+    {
+      Motor_SetSpeed(40);
+      HAL_Delay(300);
+      Motor_SetSpeed(0);
+      HAL_Delay(300);
+    }
+  }
   OLED_ShowSpeed(motor_speed);
   /* USER CODE END 2 */
 

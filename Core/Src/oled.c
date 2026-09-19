@@ -2,12 +2,15 @@
 #include "i2c.h"
 #include <string.h>
 
-/* SSD1306 I2C 地址（7 位 0x3C 左移一位） */
-#define OLED_I2C_ADDR    0x78
+/* SSD1306 I2C 地址（7 位地址左移一位，模块常见 0x3C 或 0x3D） */
+#define OLED_ADDR_1      0x78
+#define OLED_ADDR_2      0x7A
 #define OLED_CMD_BYTE    0x00
 #define OLED_DATA_BYTE   0x40
 #define OLED_WIDTH       128
 #define OLED_TIMEOUT     100
+
+static uint8_t oled_addr = 0;  /* OLED_Init 探测到的实际地址，0 表示未找到设备 */
 
 /* 8x16 点阵字库（列行式，每字符 16 字节：前 8 字节上半页，后 8 字节下半页） */
 static const char oled_font_chars[] = " 0123456789%:Sped";
@@ -33,13 +36,15 @@ static const uint8_t F8X16[][16] = {
 
 static void OLED_WriteCmd(uint8_t cmd)
 {
-  HAL_I2C_Mem_Write(&hi2c1, OLED_I2C_ADDR, OLED_CMD_BYTE,
+  if (oled_addr == 0) return;
+  HAL_I2C_Mem_Write(&hi2c1, oled_addr, OLED_CMD_BYTE,
                     I2C_MEMADD_SIZE_8BIT, &cmd, 1, OLED_TIMEOUT);
 }
 
 static void OLED_WriteData(uint8_t *data, uint16_t len)
 {
-  HAL_I2C_Mem_Write(&hi2c1, OLED_I2C_ADDR, OLED_DATA_BYTE,
+  if (oled_addr == 0) return;
+  HAL_I2C_Mem_Write(&hi2c1, oled_addr, OLED_DATA_BYTE,
                     I2C_MEMADD_SIZE_8BIT, data, len, OLED_TIMEOUT);
 }
 
@@ -51,9 +56,18 @@ static void OLED_SetPos(uint8_t x, uint8_t page)
   OLED_WriteCmd(x & 0x0F);
 }
 
-void OLED_Init(void)
+uint8_t OLED_Init(void)
 {
   HAL_Delay(100);  /* 等待 SSD1306 上电稳定 */
+
+  /* 自动探测设备地址：优先 0x3C，其次 0x3D */
+  if (HAL_I2C_IsDeviceReady(&hi2c1, OLED_ADDR_1, 3, OLED_TIMEOUT) == HAL_OK) {
+    oled_addr = OLED_ADDR_1;
+  } else if (HAL_I2C_IsDeviceReady(&hi2c1, OLED_ADDR_2, 3, OLED_TIMEOUT) == HAL_OK) {
+    oled_addr = OLED_ADDR_2;
+  } else {
+    return 0;  /* 总线上未找到 OLED，放弃初始化 */
+  }
 
   OLED_WriteCmd(0xAE);  /* 关显示 */
   OLED_WriteCmd(0xD5);  OLED_WriteCmd(0x80);  /* 显示时钟分频 */
@@ -73,6 +87,7 @@ void OLED_Init(void)
   OLED_WriteCmd(0xAF);  /* 开显示 */
 
   OLED_Clear();
+  return 1;
 }
 
 void OLED_Clear(void)
