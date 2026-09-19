@@ -18,12 +18,14 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "i2c.h"
 #include "tim.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "motor.h"
+#include "oled.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -44,7 +46,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-
+int16_t motor_speed = 0;  /* 当前速度百分比：0 ~ 100 */
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -88,8 +90,11 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_TIM3_Init();
+  MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
   Motor_Init();
+  OLED_Init();
+  OLED_ShowSpeed(motor_speed);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -99,18 +104,35 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    /* PWM 调速演示：速度 0 -> 100 -> 0 循环呼吸 */
-    for (int16_t speed = 0; speed <= 100; speed += 5)
+    /* 按键扫描：KEY_UP 每次 +20%，KEY_DOWN 每次 -20%，带 20ms 软件消抖 */
+    if (HAL_GPIO_ReadPin(KEY_UP_GPIO_Port, KEY_UP_Pin) == GPIO_PIN_RESET)
     {
-      Motor_SetSpeed(speed);
-      HAL_Delay(100);
+      HAL_Delay(20);
+      if (HAL_GPIO_ReadPin(KEY_UP_GPIO_Port, KEY_UP_Pin) == GPIO_PIN_RESET)
+      {
+        motor_speed += 20;
+        if (motor_speed > 100) {
+          motor_speed = 100;
+        }
+        Motor_SetSpeed(motor_speed);
+        OLED_ShowSpeed(motor_speed);
+        while (HAL_GPIO_ReadPin(KEY_UP_GPIO_Port, KEY_UP_Pin) == GPIO_PIN_RESET);
+      }
     }
-    for (int16_t speed = 100; speed >= 0; speed -= 5)
+    if (HAL_GPIO_ReadPin(KEY_DOWN_GPIO_Port, KEY_DOWN_Pin) == GPIO_PIN_RESET)
     {
-      Motor_SetSpeed(speed);
-      HAL_Delay(100);
+      HAL_Delay(20);
+      if (HAL_GPIO_ReadPin(KEY_DOWN_GPIO_Port, KEY_DOWN_Pin) == GPIO_PIN_RESET)
+      {
+        motor_speed -= 20;
+        if (motor_speed < 0) {
+          motor_speed = 0;
+        }
+        Motor_SetSpeed(motor_speed);
+        OLED_ShowSpeed(motor_speed);
+        while (HAL_GPIO_ReadPin(KEY_DOWN_GPIO_Port, KEY_DOWN_Pin) == GPIO_PIN_RESET);
+      }
     }
-    HAL_Delay(1000);
   }
   /* USER CODE END 3 */
 }
