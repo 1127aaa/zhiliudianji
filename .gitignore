@@ -1,0 +1,82 @@
+# ===== 构建输出 =====
+build/
+[Bb]uild*/
+[Oo]ut/
+cmake-build-*/
+*.o
+*.obj
+*.elf
+*.bin
+*.hex
+*.map
+*.lst
+*.d
+*.su
+*.a
+*.lib
+
+# ===== CMake =====
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.ninja
+.ninja_deps
+.ninja_log
+compile_commands.json
+
+# ===== STM32CubeMX / CubeIDE =====
+.mxproject
+.project
+.cproject
+.settings/
+Debug/
+Release/
+*.launch
+*.cfg
+
+# ===== Keil MDK =====
+*.uvprojx.user
+*.uvoptx
+*.uvguix.*
+RTE/
+Listings/
+Objects/
+JLinkLog.txt
+*.scvd
+*.crf
+*.dnp
+*.dep
+*.lnp
+
+# ===== IAR =====
+*.ewt
+*.ewd.x
+*.dep
+settings/
+
+# ===== VSCode =====
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# ===== 调试器 / 烧录工具 =====
+*.jlink
+*.stldr
+openocd.log
+st-link.log
+
+# ===== 操作系统 =====
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+
+# ===== 其他 =====
+*.log
+*.bak
+*.tmp
+*~
+*.swp
+.cache/
